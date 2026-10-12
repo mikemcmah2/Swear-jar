@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Swear Jar">
+<meta name="theme-color" content="#FFF4E0">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>Swear Jar</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#FFF4E0; --card:#ffffff; --ink:#3B2F4A; --muted:#8A7F99; --line:#F1E5CF;
+  --pink:#FF6B8B; --pink-d:#E24A6C; --purple:#7C5CFF; --gold:#FFC83D; --gold-d:#E8A500;
+  --green:#2FBF71; --green-d:#22995A; --glass:#E3F4FF;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:ui-rounded,"SF Pro Rounded","Nunito",system-ui,-apple-system,sans-serif}
+body{min-height:100vh;padding:calc(env(safe-area-inset-top) + 8px) 16px calc(env(safe-area-inset-bottom) + 28px);
+  -webkit-user-select:none;user-select:none;overscroll-behavior:none;
+  background-image:radial-gradient(#F6E6C8 1.5px,transparent 1.5px);background-size:22px 22px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.wrap{max-width:460px;margin:0 auto}
+
+header{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 4px}
+h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.5px}
+h1 span{color:var(--pink)}
+.since{font-size:13px;color:var(--muted);font-weight:600}
+.icon-btn{width:42px;height:42px;border-radius:14px;background:var(--card);font-size:20px;
+  box-shadow:0 3px 0 var(--line)}
+
+.card{background:var(--card);border-radius:24px;padding:16px;margin-top:14px;box-shadow:0 4px 0 var(--line)}
+.jar-card{text-align:center;padding:12px 16px 18px;position:relative;overflow:hidden}
+#jarBox{position:relative;width:200px;height:236px;margin:0 auto}
+#jarBox svg{width:100%;height:100%;overflow:visible}
+.wiggle{animation:wig .5s ease}
+@keyframes wig{0%,100%{transform:rotate(0)}20%{transform:rotate(-6deg)}40%{transform:rotate(5deg)}60%{transform:rotate(-3deg)}80%{transform:rotate(2deg)}}
+.drop{position:absolute;left:50%;top:-30px;width:30px;height:30px;margin-left:-15px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#FFE89A,var(--gold) 55%,var(--gold-d));border:2px solid var(--gold-d);
+  display:grid;place-items:center;font-weight:800;color:#9A6A00;font-size:15px;
+  animation:fall .65s cubic-bezier(.5,0,.9,.6) forwards}
+@keyframes fall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(190px) rotate(320deg);opacity:.2}}
+.total{font-size:46px;font-weight:900;margin-top:4px;letter-spacing:-1px}
+.total-sub{font-size:14px;color:var(--muted);font-weight:600;margin-top:-4px}
+
+.big-btn{display:block;width:100%;margin-top:14px;padding:18px;border-radius:22px;font-size:21px;font-weight:800;
+  color:#fff;background:var(--pink);box-shadow:0 6px 0 var(--pink-d);transition:transform .08s}
+.big-btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--pink-d)}
+.big-btn.green{background:var(--green);box-shadow:0 6px 0 var(--green-d)}
+.big-btn.green:active{box-shadow:0 2px 0 var(--green-d)}
+.big-btn:disabled{opacity:.45}
+
+.sec-title{font-size:15px;font-weight:800;color:var(--muted);margin:22px 4px 0;text-transform:uppercase;letter-spacing:.6px}
+.people{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px}
+.kid{border-radius:22px;padding:14px 10px 12px;text-align:center;box-shadow:0 4px 0 rgba(0,0,0,.06);position:relative}
+.kid .av{font-size:40px;line-height:1.1}
+.kid .nm{font-weight:800;font-size:17px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kid .amt{display:inline-block;margin-top:6px;background:#fff;border-radius:999px;padding:4px 12px;font-weight:900;font-size:18px}
+.kid.bump{animation:bump .5s ease}
+@keyframes bump{0%,100%{transform:scale(1)}40%{transform:scale(1.08)}}
+.empty{color:var(--muted);text-align:center;padding:18px 6px;font-weight:600}
+
+.log{margin-top:10px;padding:6px 14px}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1.5px dashed var(--line)}
+.row:last-child{border-bottom:0}
+.row .em{font-size:22px}
+.row .tx{flex:1;min-width:0}
+.row .t1{font-weight:800;font-size:15px}
+.row .t2{font-size:12.5px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .val{font-weight:900}
+.undo{font-size:12px;font-weight:800;color:var(--purple);background:#F1ECFF;border-radius:10px;padding:6px 9px}
+.link{display:block;margin:12px auto 0;color:var(--purple);font-weight:800;font-size:14px}
+
+/* sheets */
+.scrim{position:fixed;inset:0;background:rgba(59,47,74,.35);opacity:0;pointer-events:none;transition:opacity .25s;z-index:10}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:11;background:var(--bg);border-radius:28px 28px 0 0;
+  padding:10px 18px calc(env(safe-area-inset-bottom) + 22px);max-height:88vh;overflow-y:auto;
+  transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.9,.3,1.1);max-width:520px;margin:0 auto}
+.sheet.on{transform:translateY(0)}
+.grab{width:44px;height:5px;border-radius:9px;background:#E3D4B8;margin:0 auto 10px}
+.sheet h2{margin:4px 0 2px;font-size:24px;font-weight:900;display:flex;justify-content:space-between;align-items:center}
+.sheet p.hint{margin:2px 0 12px;color:var(--muted);font-weight:600;font-size:14px}
+.close{width:34px;height:34px;border-radius:12px;background:#fff;font-size:16px;box-shadow:0 3px 0 var(--line)}
+
+.chips{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.chip{border-radius:18px;padding:12px;display:flex;align-items:center;gap:8px;font-weight:800;font-size:16px;
+  background:#fff;border:3px solid transparent;opacity:.55;transition:all .15s;text-align:left}
+.chip .ck{margin-left:auto;width:24px;height:24px;border-radius:50%;border:2.5px solid #D9CBE8;display:grid;place-items:center;font-size:13px;color:#fff}
+.chip.on{opacity:1;border-color:var(--purple)}
+.chip.on .ck{background:var(--purple);border-color:var(--purple)}
+.chip .e{font-size:26px}
+.chip .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.selall{font-size:13px;font-weight:800;color:var(--purple);margin:10px 0 0}
+
+.stepper{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:20px;padding:10px 12px;margin-top:14px;box-shadow:0 3px 0 var(--line)}
+.stepper .lbl{font-weight:800}
+.stepper .ctl{display:flex;align-items:center;gap:14px}
+.stepper button{width:42px;height:42px;border-radius:14px;background:#F1ECFF;color:var(--purple);font-size:24px;font-weight:900}
+.stepper .v{font-size:24px;font-weight:900;min-width:28px;text-align:center}
+.math{text-align:center;margin:16px 0 0;font-weight:700;color:var(--muted)}
+.math b{color:var(--ink);font-size:22px}
+
+.payrow{display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:12px 14px;margin-top:8px}
+.payrow .e{font-size:28px}.payrow .n{flex:1;font-weight:800;font-size:17px}.payrow .a{font-weight:900;font-size:20px}
+.paytotal{display:flex;justify-content:space-between;font-weight:900;font-size:20px;padding:14px 6px 0}
+
+.edit{display:flex;align-items:center;gap:8px;background:#fff;border-radius:18px;padding:8px;margin-top:8px}
+.edit .av{width:48px;height:48px;border-radius:14px;font-size:28px}
+.edit input{flex:1;min-width:0;border:0;background:#F8F3EA;border-radius:12px;padding:12px;font:inherit;font-weight:800;font-size:16px;color:var(--ink);outline:none;-webkit-user-select:text;user-select:text}
+.edit .del{width:40px;height:40px;border-radius:12px;background:#FFE8EC;color:var(--pink-d);font-weight:900}
+.add{width:100%;margin-top:10px;padding:14px;border-radius:18px;border:2.5px dashed #D9C7A6;font-weight:800;color:var(--muted)}
+.seg{display:flex;background:#fff;border-radius:16px;padding:4px;margin-top:8px;gap:4px}
+.seg button{flex:1;padding:10px 0;border-radius:12px;font-weight:800;color:var(--muted)}
+.seg button.on{background:var(--purple);color:#fff}
+.danger{margin-top:22px;width:100%;padding:12px;border-radius:16px;color:var(--pink-d);font-weight:800;background:#FFE8EC}
+.lbl2{font-weight:800;margin-top:20px;font-size:15px}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translate(-50%,120px);
+  background:var(--ink);color:#fff;font-weight:800;padding:12px 18px;border-radius:16px;z-index:20;transition:transform .3s;white-space:nowrap}
+.toast.on{transform:translate(-50%,0)}
+.confetti{position:fixed;top:-40px;font-size:28px;z-index:30;pointer-events:none;animation:conf linear forwards}
+@keyframes conf{to{transform:translateY(110vh) rotate(540deg)}}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;background:#fff;margin-left:6px;vertical-align:1px;box-shadow:0 2px 0 var(--line)}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:#C9BBD9}
+.pill.ok .dot{background:var(--green)}.pill.busy .dot{background:var(--gold);animation:pulse 1s infinite}.pill.off .dot{background:var(--pink)}
+@keyframes pulse{50%{opacity:.3}}
+.codebox{background:#fff;border-radius:18px;padding:14px;margin-top:8px;text-align:center}
+.codebox .c{font-size:28px;font-weight:900;letter-spacing:3px;-webkit-user-select:text;user-select:text}
+.codebox .s{font-size:13px;color:var(--muted);font-weight:700;margin-top:2px}
+.btn2{width:100%;margin-top:10px;padding:14px;border-radius:18px;font-weight:800;background:#F1ECFF;color:var(--purple)}
+.codein{width:100%;margin-top:10px;border:0;background:#fff;border-radius:16px;padding:16px;font:inherit;font-size:22px;font-weight:900;letter-spacing:3px;text-align:center;text-transform:uppercase;color:var(--ink);outline:none;-webkit-user-select:text;user-select:text;box-shadow:0 3px 0 var(--line)}
+.or{text-align:center;color:var(--muted);font-weight:800;margin:18px 0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Swear <span>Jar</span></h1>
+      <div class="since"><span id="since"></span><span class="pill" id="pill" style="display:none"><span class="dot"></span><span id="pillTx"></span></span></div>
+    </div>
+    <button class="icon-btn" id="gear" aria-label="Settings">⚙️</button>
+  </header>
+
+  <div class="card jar-card">
+    <div id="jarBox"></div>
+    <div class="total" id="total">$0</div>
+    <div class="total-sub" id="totalSub">in the jar this month</div>
+  </div>
+
+  <button class="big-btn" id="swearBtn">🤬 Oops! I swore</button>
+
+  <div class="sec-title">Who's getting paid</div>
+  <div class="people" id="people"></div>
+
+  <div class="sec-title">Recent slip-ups</div>
+  <div class="card log" id="log"></div>
+
+  <button class="big-btn green" id="payBtn">💸 Pay out &amp; empty the jar</button>
+  <button class="link" id="histBtn">Past payouts</button>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- Swear sheet -->
+<div class="sheet" id="sh-swear">
+  <div class="grab"></div>
+  <h2>Who heard it? <button class="close" data-close>✕</button></h2>
+  <p class="hint">Each kid who heard it gets paid.</p>
+  <div class="chips" id="chips"></div>
+  <button class="selall" id="selAll">Select everyone</button>
+  <div class="stepper">
+    <div class="lbl">How many words?</div>
+    <div class="ctl"><button id="wMinus">−</button><div class="v" id="wVal">1</div><button id="wPlus">+</button></div>
+  </div>
+  <div class="math" id="math"></div>
+  <button class="big-btn" id="confirmSwear">Into the jar 🪙</button>
+</div>
+
+<!-- Payout sheet -->
+<div class="sheet" id="sh-pay">
+  <div class="grab"></div>
+  <h2>Payday! <button class="close" data-close>✕</button></h2>
+  <p class="hint" id="payHint"></p>
+  <div id="payList"></div>
+  <div class="paytotal"><span>Total</span><span id="payTotal"></span></div>
+  <button class="big-btn green" id="confirmPay">✅ Paid — reset the jar</button>
+</div>
+
+<!-- History sheet -->
+<div class="sheet" id="sh-hist">
+  <div class="grab"></div>
+  <h2>Past payouts <button class="close" data-close>✕</button></h2>
+  <div id="histList"></div>
+</div>
+
+<!-- Settings sheet -->
+<div class="sheet" id="sh-set">
+  <div class="grab"></div>
+  <h2>Settings <button class="close" data-close>✕</button></h2>
+  <p class="hint">Tap an animal to change it. Tap the color to swap colors.</p>
+  <div id="editList"></div>
+  <button class="add" id="addKid">＋ Add a kid</button>
+  <div class="lbl2">Fine per word, per kid</div>
+  <div class="seg" id="rateSeg"></div>
+  <div class="lbl2">Family sharing</div>
+  <div id="shareBox"></div>
+  <button class="danger" id="wipe">Erase everything</button>
+</div>
+
+<!-- Welcome / join sheet -->
+<div class="sheet" id="sh-join">
+  <div class="grab"></div>
+  <h2>Family Swear Jar 🫙 <button class="close" data-close>✕</button></h2>
+  <p class="hint">Share one jar so everyone sees the same totals, live.</p>
+  <button class="big-btn" id="newJar">✨ Start a new family jar</button>
+  <div class="or">— or join one —</div>
+  <input class="codein" id="codeIn" placeholder="JAR CODE" maxlength="14" autocapitalize="characters" autocomplete="off" spellcheck="false">
+  <button class="big-btn green" id="joinBtn">Join jar</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== CLOUD SETUP — paste your Supabase values here ===== */
+const SUPABASE_URL = 'https://nqdgcktfgvjltmumowgw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Mu0aRlpVhmz_aDLfcO2PRg_7LxpD6xW';   // Publishable key — safe to put in the app
+/* ========================================================= */
+
+const CLOUD = !!(SUPABASE_URL && SUPABASE_KEY && window.supabase);
+const LKEY='swearjar.v2', OLDKEY='swearjar.v1';
+const EMOJI=['🦊','🐼','🐸','🦄','🐯','🐨','🐵','🐷','🐙','🦖','🐶','🐱','🐰','🐻','🐧','🦁'];
+const COLORS=['#FFD6E0','#D6E4FF','#D4F5E2','#FFF0B3','#EBDDFF','#FFE0CC','#CFF3F5'];
+const RATES=[0.25,0.5,1,2,5];
+const $=id=>document.getElementById(id);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const blank=()=>({people:[],rate:1,log:[],payouts:[],since:Date.now()});
+
+/* ---------- local state: shared base + my unsynced changes ---------- */
+let L=loadLocal();
+function loadLocal(){
+  try{const l=JSON.parse(localStorage.getItem(LKEY)); if(l&&l.base) return l;}catch(e){}
+  let seed=blank();
+  try{const o=JSON.parse(localStorage.getItem(OLDKEY)); if(o&&Array.isArray(o.people)) seed=o;}catch(e){}
+  return {code:null,base:{data:seed,version:0},pending:[]};
+}
+function saveLocal(){try{localStorage.setItem(LKEY,JSON.stringify(L))}catch(e){}}
+function view(){const s=clone(L.base.data);L.pending.forEach(op=>apply(s,op));return s;}
+let S=view();
+
+const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>{n=Math.round(n*100)/100;return '$'+(n%1?n.toFixed(2):n.toString());};
+const owedIn=(s,pid,log=s.log)=>log.reduce((a,e)=>a+(e.ids.includes(pid)?e.words*e.rate:0),0);
+const totalIn=(s,log=s.log)=>log.reduce((a,e)=>a+e.words*e.rate*e.ids.length,0);
+const owed=pid=>owedIn(S,pid), total=()=>totalIn(S);
+const person=id=>S.people.find(p=>p.id===id);
+const fmtDate=ts=>new Date(ts).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+const fmtWhen=ts=>new Date(ts).toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'});
+
+/* Every change is an "op" so it can be replayed on top of whatever other phones did */
+function apply(s,op){
+  switch(op.t){
+    case 'swear': if(!s.log.some(e=>e.id===op.e.id)) s.log.push(clone(op.e)); break;
+    case 'undo': s.log=s.log.filter(e=>e.id!==op.id); break;
+    case 'people': {
+      s.people=clone(op.people);
+      const ids=new Set(s.people.map(p=>p.id));
+      s.log.forEach(l=>l.ids=l.ids.filter(i=>ids.has(i)));
+      s.log=s.log.filter(l=>l.ids.length); break;
+    }
+    case 'rate': s.rate=op.rate; break;
+    case 'pay': {
+      if(s.payouts.some(p=>p.id===op.id)) break;
+      const paid=s.log.filter(e=>e.ts<=op.ts);
+      if(!paid.length) break;
+      s.payouts.unshift({id:op.id,ts:op.ts,from:s.since,total:totalIn(s,paid),
+        items:s.people.map(p=>({name:p.name,emoji:p.emoji,amt:owedIn(s,p.id,paid)})).filter(x=>x.amt>0)});
+      s.log=s.log.filter(e=>e.ts>op.ts); s.since=op.ts; break;
+    }
+    case 'wipe': {const b=blank();Object.keys(b).forEach(k=>s[k]=b[k]);s.since=op.ts;break;}
+  }
+}
+let inflight=0;
+function commit(op,{render=true}={}){
+  const last=L.pending[L.pending.length-1];
+  if(op.t==='people'&&last&&last.t==='people'&&L.pending.length>inflight) L.pending[L.pending.length-1]=op;
+  else L.pending.push(op);
+  apply(S,op); saveLocal(); if(render) renderAll(); scheduleSync(op.t==='people'?700:150);
+}
+
+/* ---------- cloud sync ---------- */
+let sb=null, chan=null, syncing=false, again=false, syncTimer;
+if(CLOUD){try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);}catch(e){}}
+function setStatus(k){
+  const p=$('pill');
+  if(!CLOUD||!L.code){p.style.display='none';return;}
+  p.style.display='';p.className='pill '+k;
+  $('pillTx').textContent={ok:'Synced',busy:'Syncing',off:'Offline'}[k];
+}
+function scheduleSync(d=300){if(!sb||!L.code)return;clearTimeout(syncTimer);syncTimer=setTimeout(sync,d);}
+async function fetchJar(code){
+  const {data,error}=await sb.rpc('swearjar_get',{p_code:code});
+  if(error) throw error;
+  return data&&data[0]?data[0]:null;
+}
+async function sync(){
+  if(!sb||!L.code) return;
+  if(syncing){again=true;return;}
+  syncing=true; setStatus('busy');
+  const code=L.code;
+  try{
+    for(let tries=0;tries<6;tries++){
+      const row=await fetchJar(code);
+      if(code!==L.code) break;
+      if(row&&!L.pending.length){ L.base={data:row.data,version:row.version}; break; }
+      const base=row?{data:row.data,version:row.version}:{data:L.base.data,version:0};
+      const next=clone(base.data); inflight=L.pending.length;
+      L.pending.forEach(op=>apply(next,op));
+      const {data:nv,error}=await sb.rpc('swearjar_save',{p_code:code,p_data:next,p_version:base.version});
+      const sent=inflight; inflight=0;
+      if(error) throw error;
+      if(nv>0){ L.pending=L.pending.slice(sent); L.base={data:next,version:nv}; ping(); if(!L.pending.length) break; }
+      // nv<=0 → someone else saved first; loop, re-fetch and replay my changes on top
+    }
+    saveLocal(); S=view(); renderAll(); refreshOpenSheet(); setStatus(L.pending.length?'busy':'ok');
+  }catch(e){ inflight=0; setStatus('off'); clearTimeout(syncTimer); syncTimer=setTimeout(sync,15000); }
+  syncing=false;
+  if(again){again=false;scheduleSync(50);}
+}
+function connect(){
+  if(!sb||!L.code) return;
+  try{
+    if(chan) sb.removeChannel(chan);
+    chan=sb.channel('swearjar-'+L.code).on('broadcast',{event:'changed'},()=>scheduleSync(80)).subscribe();
+  }catch(e){}
+}
+function ping(){try{chan&&chan.send({type:'broadcast',event:'changed',payload:{}});}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleSync(50);});
+window.addEventListener('online',()=>scheduleSync(50));
+setInterval(()=>{if(!document.hidden)scheduleSync(0);},30000);
+
+/* jar codes */
+const ALPH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const normCode=c=>String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const prettyCode=c=>c.slice(0,5)+'-'+c.slice(5);
+function genCode(){const a=new Uint32Array(10);crypto.getRandomValues(a);return [...a].map(x=>ALPH[x%ALPH.length]).join('');}
+function inviteUrl(){const u=new URL(location.href);u.search='';u.hash='';u.searchParams.set('jar',L.code);return u.toString();}
+function setUrl(){try{history.replaceState(null,'',inviteUrl());}catch(e){}}
+
+async function createJar(){
+  L={code:genCode(),base:{data:view(),version:0},pending:[]};
+  saveLocal(); setUrl(); connect(); closeSheet(); S=view(); renderAll();
+  await sync();
+  toast('Family jar created 🎉'); openSettings();
+}
+async function joinJar(raw,quiet){
+  const code=normCode(raw);
+  if(code.length<8){toast('That code looks too short');return;}
+  if(!sb){toast('Cloud sync is not set up');return;}
+  try{
+    const row=await fetchJar(code);
+    if(!row){toast('No jar with that code 🤔');return;}
+    L={code,base:{data:row.data,version:row.version},pending:[]};
+    saveLocal(); setUrl(); connect(); S=view(); renderAll(); closeSheet(); setStatus('ok');
+    if(!quiet) toast('Joined the family jar! 🎉');
+  }catch(e){toast('Could not reach the jar — try again');}
+}
+
+/* ---------- sound ---------- */
+let ac;
+function clink(n=1){
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    for(let i=0;i<Math.min(n,5);i++){
+      const t=ac.currentTime+0.55+i*0.09;
+      [1900,2650].forEach((f,j)=>{
+        const o=ac.createOscillator(),g=ac.createGain();
+        o.type='sine';o.frequency.value=f+Math.random()*120;
+        g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(j?0.08:0.14,t+0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+0.35);
+        o.connect(g).connect(ac.destination);o.start(t);o.stop(t+0.4);
+      });
+    }
+  }catch(e){}
+}
+
+/* ---------- jar ---------- */
+function rnd(i){const x=Math.sin(i*99.13+7.7)*43758.5;return x-Math.floor(x);}
+function jarSVG(amount){
+  const coins=Math.min(Math.ceil(amount),90);
+  let c='';
+  const perRow=8,r=11;
+  for(let i=0;i<coins;i++){
+    const row=Math.floor(i/perRow),col=i%perRow;
+    const off=row%2?10:0;
+    const x=36+col*19.5+off+(rnd(i)-.5)*5;
+    const y=226-row*15+(rnd(i+50)-.5)*4;
+    if(x>186) continue;
+    c+=`<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${((rnd(i+9)-.5)*40).toFixed(0)})">
+      <circle r="${r}" fill="url(#coinG)" stroke="#D99A00" stroke-width="1.6"/>
+      <circle r="${r-3.5}" fill="none" stroke="#F3B300" stroke-width="1.2"/>
+      <text y="4" text-anchor="middle" font-size="11" font-weight="900" fill="#A87400">$</text></g>`;
+  }
+  const face=amount===0?['^','^','smile']:amount<5?['•','•','smile']:amount<15?['•','•','flat']:amount<30?['o','o','o']:['x','x','o'];
+  const eye=(cx,t)=>t==='^'?`<path d="M${cx-5} 156 q5 -7 10 0" stroke="#3B2F4A" stroke-width="3" fill="none" stroke-linecap="round"/>`
+    :t==='x'?`<path d="M${cx-4} 150 l8 8 M${cx+4} 150 l-8 8" stroke="#3B2F4A" stroke-width="3" stroke-linecap="round"/>`
+    :t==='o'?`<circle cx="${cx}" cy="154" r="4.5" fill="#3B2F4A"/><circle cx="${cx+1.5}" cy="152.5" r="1.5" fill="#fff"/>`
+    :`<circle cx="${cx}" cy="154" r="3.6" fill="#3B2F4A"/>`;
+  const mouth=face[2]==='smile'?`<path d="M103 165 q7 7 14 0" stroke="#3B2F4A" stroke-width="3" fill="none" stroke-linecap="round"/>`
+    :face[2]==='flat'?`<path d="M103 167 h14" stroke="#3B2F4A" stroke-width="3" stroke-linecap="round"/>`
+    :`<ellipse cx="110" cy="168" rx="5" ry="6" fill="#3B2F4A"/>`;
+  return `<svg viewBox="0 0 220 260" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="coinG" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#FFF0B0"/><stop offset=".55" stop-color="#FFC83D"/><stop offset="1" stop-color="#E8A500"/></radialGradient>
+    <clipPath id="jarClip"><path d="M58 52 h104 q0 14 14 22 q26 14 26 48 v92 q0 38 -38 38 h-108 q-38 0 -38 -38 v-92 q0 -34 26 -48 q14 -8 14 -22z"/></clipPath>
+  </defs>
+  <ellipse cx="110" cy="254" rx="88" ry="7" fill="#000" opacity=".07"/>
+  <path d="M58 52 h104 q0 14 14 22 q26 14 26 48 v92 q0 38 -38 38 h-108 q-38 0 -38 -38 v-92 q0 -34 26 -48 q14 -8 14 -22z" fill="#E3F4FF" opacity=".85"/>
+  <g clip-path="url(#jarClip)">${c}</g>
+  <path d="M58 52 h104 q0 14 14 22 q26 14 26 48 v92 q0 38 -38 38 h-108 q-38 0 -38 -38 v-92 q0 -34 26 -48 q14 -8 14 -22z" fill="none" stroke="#3B2F4A" stroke-width="4"/>
+  <path d="M38 120 q0 -22 16 -32" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" opacity=".9"/>
+  <path d="M36 140 v40" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" opacity=".9"/>
+  <rect x="48" y="22" width="124" height="32" rx="12" fill="#7C5CFF" stroke="#3B2F4A" stroke-width="4"/>
+  <rect x="88" y="32" width="44" height="7" rx="3.5" fill="#3B2F4A"/>
+  <path d="M60 30 h20" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+  <rect x="62" y="122" width="96" height="62" rx="18" fill="#FF6B8B" stroke="#3B2F4A" stroke-width="4"/>
+  <text x="110" y="141" text-anchor="middle" font-size="12" font-weight="900" fill="#fff" letter-spacing="1.5">SWEAR JAR</text>
+  ${eye(97,face[0])}${eye(123,face[1])}${mouth}
+  <circle cx="84" cy="164" r="5" fill="#fff" opacity=".35"/><circle cx="136" cy="164" r="5" fill="#fff" opacity=".35"/>
+  </svg>`;
+}
+let lastTotal=null;
+function renderJar(){
+  const t=total();
+  $('jarBox').innerHTML=jarSVG(t);
+  $('total').textContent=money(t);
+  $('totalSub').textContent=t===0?'Squeaky clean so far 😇':t>=90?'The jar is overflowing! 🙊':'in the jar this month';
+  $('since').textContent='Since '+fmtDate(S.since);
+  if(lastTotal!==null&&t>lastTotal&&!localDrop){ // a coin arrived from another phone
+    const jb=$('jarBox');jb.classList.remove('wiggle');void jb.offsetWidth;jb.classList.add('wiggle');clink(1);
+  }
+  lastTotal=t;
+}
+
+function renderPeople(){
+  const el=$('people');
+  if(!S.people.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1">No kids yet — tap ⚙️ to add them.</div>`;return;}
+  el.innerHTML=S.people.map(p=>`<div class="kid" id="k-${p.id}" style="background:${p.color}">
+    <div class="av">${p.emoji}</div><div class="nm">${esc(p.name||'Kid')}</div>
+    <div class="amt">${money(owed(p.id))}</div></div>`).join('');
+}
+function renderLog(){
+  const el=$('log');
+  if(!S.log.length){el.innerHTML=`<div class="empty">Nothing yet. Keep it clean! ✨</div>`;return;}
+  el.innerHTML=S.log.slice().sort((a,b)=>a.ts-b.ts).slice(-12).reverse().map(e=>{
+    const names=e.ids.map(id=>person(id)?.name||'Kid').join(', ');
+    return `<div class="row"><div class="em">🤬</div><div class="tx">
+      <div class="t1">${e.words} word${e.words>1?'s':''} · ${money(e.words*e.rate*e.ids.length)}</div>
+      <div class="t2">${fmtWhen(e.ts)} · ${esc(names)}</div></div>
+      <button class="undo" data-undo="${e.id}">Undo</button></div>`;
+  }).join('');
+}
+function renderAll(){renderJar();renderPeople();renderLog();}
+
+/* ---------- sheets ---------- */
+let openId=null;
+function openSheet(id){closeSheet();openId=id;$('scrim').classList.add('on');$('sh-'+id).classList.add('on');}
+function closeSheet(){if(openId)$('sh-'+openId).classList.remove('on');$('scrim').classList.remove('on');openId=null;}
+function refreshOpenSheet(){
+  if(openId==='set'&&!(document.activeElement&&document.activeElement.matches('[data-name]'))) renderSettings();
+  if(openId==='swear'){pick=new Set([...pick].filter(id=>person(id)));renderSwear();}
+}
+$('scrim').onclick=closeSheet;
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeSheet);
+
+let toastT;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2100);}
+
+/* ---------- swear flow ---------- */
+let pick=new Set(),words=1,localDrop=false;
+$('swearBtn').onclick=()=>{
+  if(!S.people.length){openSettings();toast('Add your kids first 👇');return;}
+  pick=new Set(S.people.map(p=>p.id));words=1;renderSwear();openSheet('swear');
+};
+$('jarBox').onclick=()=>$('swearBtn').click();
+function renderSwear(){
+  $('chips').innerHTML=S.people.map(p=>`<button class="chip ${pick.has(p.id)?'on':''}" data-pick="${p.id}" style="background:${p.color}">
+    <span class="e">${p.emoji}</span><span class="n">${esc(p.name||'Kid')}</span><span class="ck">✓</span></button>`).join('');
+  $('wVal').textContent=words;
+  const amt=words*pick.size*S.rate;
+  $('math').innerHTML=pick.size?`${words} × ${pick.size} kid${pick.size>1?'s':''} × ${money(S.rate)} = <b>${money(amt)}</b>`:'Pick who heard it';
+  $('confirmSwear').disabled=!pick.size;
+  $('selAll').textContent=pick.size===S.people.length?'Clear all':'Select everyone';
+}
+$('chips').onclick=e=>{const b=e.target.closest('[data-pick]');if(!b)return;const id=b.dataset.pick;pick.has(id)?pick.delete(id):pick.add(id);renderSwear();};
+$('selAll').onclick=()=>{pick=pick.size===S.people.length?new Set():new Set(S.people.map(p=>p.id));renderSwear();};
+$('wMinus').onclick=()=>{words=Math.max(1,words-1);renderSwear();};
+$('wPlus').onclick=()=>{words=Math.min(99,words+1);renderSwear();};
+$('confirmSwear').onclick=()=>{
+  const ids=[...pick];
+  localDrop=true;
+  commit({t:'swear',e:{id:uid(),ts:Date.now(),words,ids,rate:S.rate}},{render:false});
+  closeSheet();
+  const n=Math.min(words*ids.length,6);
+  clink(n);
+  for(let i=0;i<n;i++)setTimeout(()=>{
+    const d=document.createElement('div');d.className='drop';d.textContent='$';
+    $('jarBox').appendChild(d);setTimeout(()=>d.remove(),700);
+  },i*110);
+  setTimeout(()=>{
+    renderAll(); localDrop=false;
+    const jb=$('jarBox');jb.classList.remove('wiggle');void jb.offsetWidth;jb.classList.add('wiggle');
+    ids.forEach(id=>{const k=$('k-'+id);if(k){k.classList.add('bump');setTimeout(()=>k.classList.remove('bump'),600);}});
+  },550+n*110);
+  toast(`+${money(words*ids.length*S.rate)} in the jar`);
+};
+$('log').onclick=e=>{
+  const b=e.target.closest('[data-undo]');if(!b)return;
+  commit({t:'undo',id:b.dataset.undo});toast('Undone ↩︎');
+};
+
+/* ---------- payout ---------- */
+$('payBtn').onclick=()=>{
+  const t=total();
+  if(!t){toast('Jar is empty — nothing to pay 🎉');return;}
+  $('payHint').textContent=`Slip-ups since ${fmtDate(S.since)}. Hand it over!`;
+  $('payList').innerHTML=S.people.map(p=>`<div class="payrow"><span class="e">${p.emoji}</span><span class="n">${esc(p.name||'Kid')}</span><span class="a">${money(owed(p.id))}</span></div>`).join('');
+  $('payTotal').textContent=money(t);
+  openSheet('pay');
+};
+$('confirmPay').onclick=()=>{
+  const maxTs=Math.max(Date.now(),...S.log.map(e=>e.ts));
+  commit({t:'pay',id:uid(),ts:maxTs});
+  closeSheet();confetti();toast('Jar emptied! Fresh start ✨');
+};
+function confetti(){
+  const set=['💵','💸','🪙','⭐️','🎉'];
+  for(let i=0;i<34;i++){
+    const c=document.createElement('div');c.className='confetti';c.textContent=set[i%set.length];
+    c.style.left=Math.random()*100+'vw';c.style.animationDuration=(1.6+Math.random()*1.6)+'s';c.style.animationDelay=(Math.random()*.5)+'s';
+    document.body.appendChild(c);setTimeout(()=>c.remove(),4000);
+  }
+}
+$('histBtn').onclick=()=>{
+  $('histList').innerHTML=S.payouts.length?S.payouts.map(p=>`<div class="payrow" style="display:block">
+    <div style="display:flex;justify-content:space-between;font-weight:900"><span>${fmtDate(p.from)} – ${fmtDate(p.ts)}</span><span>${money(p.total)}</span></div>
+    <div style="color:var(--muted);font-weight:700;font-size:14px;margin-top:4px">${p.items.map(i=>`${i.emoji} ${esc(i.name)} ${money(i.amt)}`).join(' · ')}</div></div>`).join('')
+    :`<div class="empty">No payouts yet.</div>`;
+  openSheet('hist');
+};
+
+/* ---------- settings ---------- */
+$('gear').onclick=openSettings;
+function openSettings(){renderSettings();openSheet('set');}
+function renderSettings(){
+  $('editList').innerHTML=S.people.map(p=>`<div class="edit" data-id="${p.id}">
+    <button class="av" data-emoji style="background:${p.color}">${p.emoji}</button>
+    <input value="${esc(p.name)}" placeholder="Name" maxlength="18" data-name>
+    <button class="av" data-color style="width:34px;height:34px;border-radius:50%;background:${p.color};border:3px solid #fff;box-shadow:0 0 0 2px #E3D4B8"></button>
+    <button class="del" data-del>✕</button></div>`).join('')||`<div class="empty">Add the kids who collect.</div>`;
+  $('rateSeg').innerHTML=RATES.map(r=>`<button class="${r===S.rate?'on':''}" data-rate="${r}">${money(r)}</button>`).join('');
+  $('shareBox').innerHTML=!CLOUD
+    ? `<div class="codebox"><div class="s">Cloud sync isn't set up yet — this jar lives on this phone only.</div></div>`
+    : L.code
+      ? `<div class="codebox"><div class="c">${prettyCode(L.code)}</div><div class="s">Family jar code — everyone with it shares this jar</div></div>
+         <button class="btn2" id="shareLink">📲 Send invite link to the kids</button>
+         <button class="btn2" id="switchJar" style="background:#fff;color:var(--muted)">Join a different jar</button>`
+      : `<button class="btn2" id="switchJar">☁️ Share this jar with the family</button>`;
+}
+function peopleCopy(){return clone(S.people);}
+$('editList').oninput=e=>{
+  if(!e.target.matches('[data-name]'))return;
+  const id=e.target.closest('.edit').dataset.id;
+  const ps=peopleCopy(); ps.find(p=>p.id===id).name=e.target.value;
+  commit({t:'people',people:ps});
+};
+$('editList').onclick=e=>{
+  const row=e.target.closest('.edit');if(!row)return;
+  const ps=peopleCopy(); const p=ps.find(x=>x.id===row.dataset.id);
+  if(e.target.closest('[data-emoji]')){p.emoji=EMOJI[(EMOJI.indexOf(p.emoji)+1)%EMOJI.length];}
+  else if(e.target.closest('[data-color]')){p.color=COLORS[(COLORS.indexOf(p.color)+1)%COLORS.length];}
+  else if(e.target.closest('[data-del]')){
+    if(owed(p.id)>0&&!confirm(`${p.name||'This kid'} is owed ${money(owed(p.id))}. Remove anyway?`))return;
+    ps.splice(ps.indexOf(p),1);
+  } else return;
+  commit({t:'people',people:ps}); renderSettings();
+};
+$('addKid').onclick=()=>{
+  const ps=peopleCopy(),n=ps.length;
+  ps.push({id:uid(),name:'',emoji:EMOJI[n%EMOJI.length],color:COLORS[n%COLORS.length]});
+  commit({t:'people',people:ps}); renderSettings();
+  const ins=$('editList').querySelectorAll('[data-name]');ins[ins.length-1]?.focus();
+};
+$('rateSeg').onclick=e=>{const b=e.target.closest('[data-rate]');if(!b)return;commit({t:'rate',rate:+b.dataset.rate});renderSettings();};
+$('shareBox').onclick=async e=>{
+  if(e.target.closest('#switchJar')){openSheet('join');return;}
+  if(e.target.closest('#shareLink')){
+    const url=inviteUrl(), text=`Join our family Swear Jar 🫙 Code: ${prettyCode(L.code)}`;
+    try{ if(navigator.share){await navigator.share({title:'Swear Jar',text,url});return;} }catch(err){return;}
+    try{await navigator.clipboard.writeText(text+'\n'+url);toast('Invite link copied 📋');}catch(err){toast(url);}
+  }
+};
+$('wipe').onclick=()=>{
+  if(!confirm(L.code?'Erase all kids, slip-ups and payout history for EVERYONE in this family jar?':'Erase all kids, slip-ups and payout history?'))return;
+  commit({t:'wipe',ts:Date.now()});renderSettings();toast('All cleared');
+};
+
+/* ---------- join / create ---------- */
+$('newJar').onclick=()=>{if(!sb){toast('Cloud sync is not set up');return;}createJar();};
+$('joinBtn').onclick=()=>joinJar($('codeIn').value);
+$('codeIn').onkeydown=e=>{if(e.key==='Enter')joinJar($('codeIn').value);};
+
+/* ---------- start ---------- */
+renderAll();
+const urlCode=normCode(new URLSearchParams(location.search).get('jar'));
+if(CLOUD&&L.code){ setUrl(); connect(); setStatus(L.pending.length?'busy':'ok'); sync(); }
+if(CLOUD&&urlCode&&urlCode!==L.code){ joinJar(urlCode,false); }
+else if(CLOUD&&!L.code){ setTimeout(()=>openSheet('join'),400); }
+else if(!S.people.length){ setTimeout(openSettings,400); }
+</script>
+</body>
+</html>
